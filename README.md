@@ -27,36 +27,39 @@ The skills are opinionated about one thing: **where the model is allowed to be t
 - **A human holds the pen.** Nothing client-facing is ever sent or marked as sent. Change requests and baselines stay drafts until a person approves them; only then is anything logged.
 - **Fail loud, not confident.** Given an incomplete or contradictory SOW, the correct output is a baseline full of `NOT_FOUND`s and risk flags — not a clean-looking brief that papers over the gaps. "I couldn't find the end date; human review required" is the feature, not the bug.
 
+## Tested, not just written
+
+The skills ship with an evaluation harness (`eval/`): a gold set of fixtures and `run_eval.py`, so changes to a skill are measured against expected classifications and extractions instead of eyeballed. The same discipline the skills enforce on delivery, applied to the skills themselves.
+
 ## Repo structure
+
+The two skill definitions live in `skills/` and share the tooling at the repo root:
 
 ```
 .
-├── sow-intake/
-│   ├── SKILL.md
-│   ├── scripts/        # citation validation, revenue & date math
-│   ├── schemas/        # baseline.schema.json
-│   └── templates/      # delivery-brief.md
-├── scope-sentinel/
-│   ├── SKILL.md
-│   ├── scripts/        # citation validation, size→cost, event logging
-│   ├── templates/      # change-request.md
-│   └── config/         # qualitative sizing definitions
+├── skills/
+│   ├── sow-intake/SKILL.md       # SOW → cited baseline + delivery brief
+│   └── scope-sentinel/SKILL.md   # request → in/out/ambiguous vs. baseline
+├── scripts/        # citation validation, revenue & date math, size→cost, event logging
+├── schemas/        # baseline.schema.json
+├── templates/      # delivery-brief.md, change-request.md
+├── config/         # qualitative sizing definitions, rate card
+├── eval/           # gold-set fixtures + run_eval.py harness
+├── .gitignore
 └── README.md
 ```
 
+The shared layout is deliberate: both skills read the same schemas, write through the same templates, and call the same verified scripts, so the rules stay consistent across the pipeline.
+
 ## Using them
 
-These are Claude skills (Claude Code / Claude apps). Drop a skill folder into your skills directory and Claude picks it up automatically by its `description`:
+These are Claude skills (Claude Code / Claude apps). Clone the repo and point Claude at it, or copy the skill folders into your skills directory together with the shared root directories they depend on (`scripts/`, `schemas/`, `templates/`, `config/`):
 
 ```bash
-# user-level (available everywhere)
-cp -r sow-intake scope-sentinel ~/.claude/skills/
-
-# or project-level (scoped to one repo)
-cp -r sow-intake scope-sentinel .claude/skills/
+git clone git@github.com:slopez-z/skills.git
 ```
 
-Then just ask — *"run intake on this SOW"* or *"is this request in scope?"* — and the relevant skill triggers. Both expect a `projects/<project>/` working folder; see each `SKILL.md` for the exact inputs and the human-approval gates.
+Each skill triggers by its `description` — just ask *"run intake on this SOW"* or *"is this request in scope?"*. Both expect a `projects/<project>/` working folder; see each `SKILL.md` for the exact inputs and the human-approval gates.
 
 ## A note on scope
 
