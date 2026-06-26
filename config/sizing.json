@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "basis": "blended_hourly_rate",
+  "sizes": {
+    "S": { "hours_min": 8,  "hours_max": 16 },
+    "M": { "hours_min": 16, "hours_max": 40 },
+    "L": { "hours_min": 40, "hours_max": 80 }
+  },
+  "xl_rule": "Estimates above 80 hours exceed change-request territory and trigger a re-scoping conversation (SOW amendment), not a CR.",
+  "policy": "Cost is always reported as a range (min-max), never a single number. The LLM proposes a size and rationale; this table converts size to hours and cost deterministically; a human confirms."
+}

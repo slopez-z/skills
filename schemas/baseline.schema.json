@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Delivery Baseline",
+  "description": "Persistent per-project memory produced by sow-intake and consumed by scope-sentinel. Every extracted value carries a verbatim citation to the source SOW, or the literal string NOT_FOUND. No field may contain a value invented by the model.",
+  "type": "object",
+  "required": ["project_id", "client", "project_name", "engagement_type", "dates", "scope_items", "commercials", "risk_flags", "extraction_meta"],
+  "definitions": {
+    "citation": {
+      "type": "object",
+      "required": ["section", "quote"],
+      "properties": {
+        "section": { "type": "string", "description": "Section or clause identifier, e.g. '3.2', 'E1', 'M4'" },
+        "quote": { "type": "string", "description": "Verbatim quote copied from the SOW. Verified by scripts/validate_citations.py" }
+      }
+    },
+    "cited_value": {
+      "oneOf": [
+        { "const": "NOT_FOUND" },
+        {
+          "type": "object",
+          "required": ["value", "citation"],
+          "properties": {
+            "value": { "type": ["string", "number"] },
+            "citation": { "$ref": "#/definitions/citation" }
+          }
+        }
+      ]
+    },
+    "cited_item": {
+      "type": "object",
+      "required": ["id", "text", "citation"],
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "citation": { "$ref": "#/definitions/citation" }
+      }
+    }
+  },
+  "properties": {
+    "project_id": { "type": "string", "description": "Equal to the project folder name. Convention: <client>-<project> slug." },
+    "client": { "type": "string" },
+    "project_name": { "type": "string" },
+    "engagement_type": {
+      "type": "object",
+      "required": ["value", "citation"],
+      "properties": {
+        "value": { "enum": ["fixed_price", "time_and_materials", "staff_augmentation"] },
+        "citation": { "$ref": "#/definitions/citation" }
+      }
+    },
+    "language": { "type": "string" },
+    "dates": {
+      "type": "object",
+      "required": ["start_date", "end_date"],
+      "properties": {
+        "start_date": { "$ref": "#/definitions/cited_value", "description": "ISO date. Convention: first contractual milestone or term start." },
+        "end_date": { "$ref": "#/definitions/cited_value", "description": "ISO date. Convention: last contractual milestone or term end." }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "date", "citation"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "date": { "type": "string", "description": "ISO date, 'TBD' if explicitly undefined in the SOW, or 'NOT_FOUND'" },
+          "citation": { "$ref": "#/definitions/citation" }
+        }
+      }
+    },
+    "scope_items": { "type": "array", "items": { "$ref": "#/definitions/cited_item" } },
+    "deliverables": { "type": "array", "items": { "$ref": "#/definitions/cited_item" } },
+    "assumptions": { "type": "array", "items": { "$ref": "#/definitions/cited_item" } },
+    "exclusions": { "type": "array", "items": { "$ref": "#/definitions/cited_item" } },
+    "slas": { "type": "array", "items": { "$ref": "#/definitions/cited_item" } },
+    "commercials": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model": { "enum": ["fixed_price", "time_and_materials", "staff_augmentation"] },
+        "currency": { "type": "string" },
+        "total_value": { "type": ["number", "string"], "description": "Fixed price only. Number or NOT_FOUND." },
+        "payment_schedule": {
+          "type": "array",
+          "description": "Fixed price only.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "trigger": { "type": "string" },
+              "percent": { "type": "number" },
+              "amount": { "type": "number" },
+              "citation": { "$ref": "#/definitions/citation" }
+            }
+          }
+        },
+        "rates": {
+          "type": "object",
+          "description": "T&M only. Map of role to hourly rate as stated in the SOW.",
+          "additionalProperties": { "type": "number" }
+        },
+        "monthly_hours_cap": {
+          "type": ["number", "array", "string"],
+          "description": "T&M only. If the SOW states conflicting caps, record ALL stated values as an array — never pick one. NOT_FOUND if absent."
+        },
+        "estimated_duration_weeks": { "type": ["array", "string"], "description": "T&M only. [min, max] or NOT_FOUND." },
+        "team": {
+          "type": "array",
+          "description": "Staff augmentation only.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string" },
+              "fte": { "type": "number" },
+              "monthly_hours_per_fte": { "type": "number" },
+              "monthly_fee_per_fte": { "type": "number" },
+              "citation": { "$ref": "#/definitions/citation" }
+            }
+          }
+        },
+        "stated_monthly_fee": { "type": ["number", "string"] },
+        "stated_term_total": { "type": ["number", "string"] }
+      }
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "severity", "description"],
+        "properties": {
+          "type": {
+            "enum": [
+              "missing_end_date", "missing_start_date", "milestone_tbd",
+              "missing_assumptions_section", "missing_exclusions_section",
+              "undefined_sla_reference", "hours_cap_contradiction",
+              "numeric_contradiction", "engagement_model_mismatch",
+              "client_controlled_prioritization", "undefined_urgent_support_sla",
+              "unusual_penalty", "ambiguous_scope_language", "other"
+            ]
+          },
+          "severity": { "enum": ["low", "medium", "high"] },
+          "description": { "type": "string" },
+          "citation": { "$ref": "#/definitions/citation" }
+        }
+      }
+    },
+    "extraction_meta": {
+      "type": "object",
+      "required": ["extracted_at", "fields_not_found", "fields_pending_review"],
+      "properties": {
+        "model": { "type": "string" },
+        "extracted_at": { "type": "string" },
+        "fields_not_found": { "type": "array", "items": { "type": "string" } },
+        "fields_pending_review": { "type": "array", "items": { "type": "string" }, "description": "Fields whose citation failed validation or that require human judgment." }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "version": "2026-Q2",
+  "currency": "USD",
+  "effective_date": "2026-04-01",
+  "roles": {
+    "engagement_manager": { "label": "Engagement Manager", "hourly_rate": 120 },
+    "solution_architect": { "label": "Solution Architect", "hourly_rate": 140 },
+    "project_manager": { "label": "Project Manager", "hourly_rate": 100 },
+    "conversational_designer": { "label": "Conversational Designer", "hourly_rate": 90 },
+    "integration_engineer": { "label": "Integration Engineer", "hourly_rate": 110 },
+    "qa_analyst": { "label": "QA Analyst", "hourly_rate": 70 }
+  },
+  "blended_hourly_rate": 105,
+  "monthly_hours_per_fte": 160,
+  "notes": "Synthetic rate card for demo purposes. A project-level rate-card.json placed inside a project folder overrides this default (negotiated client rates)."
+}
